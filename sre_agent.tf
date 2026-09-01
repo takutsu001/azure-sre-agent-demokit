@@ -43,7 +43,7 @@ resource "azurerm_user_assigned_identity" "sre_agent" {
 resource "azapi_resource" "sre_agent" {
   type      = "Microsoft.App/agents@2025-05-01-preview"
   name      = var.sre_agent_name
-  location  = "eastus2"
+  location  = "japaneast"
   parent_id = azurerm_resource_group.sre_agent.id
 
   # Disable schema validation as this is a preview API not yet in azapi provider schema
