@@ -19,6 +19,12 @@ resource "azurerm_windows_web_app" "main" {
 
   https_only = true
 
+  # Required for Publish Profile based deployment via GitHub Actions.
+  # azurerm provider ~> 4.0 defaults this to false, which prevents
+  # azurerm_app_service_source_control from registering the publish
+  # profile secret to GitHub.
+  webdeploy_publish_basic_authentication_enabled = true
+
   site_config {
     always_on = false
 
