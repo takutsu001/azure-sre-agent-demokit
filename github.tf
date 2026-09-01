@@ -34,10 +34,11 @@ resource "null_resource" "push_files" {
     repo_id    = github_repository.main.id
     source_dir = var.github_push_source_dir
     # Optional: trigger on file changes (use timestamp or hash)
-    timestamp  = timestamp()
+    timestamp = timestamp()
   }
 
   provisioner "local-exec" {
+    interpreter = ["C:/Program Files/Git/bin/bash.exe", "-c"]
     command = <<-EOT
       set -e
       
