@@ -32,7 +32,7 @@
 | Log Analytics Workspace | SRE Agent用ログ | PerGB2018 (30日保持) |
 | Application Insights | SRE Agent用監視 | Log Analytics統合 |
 | User Assigned Identity | SRE Agentマネージド ID | - |
-| Azure SRE Agent | AI駆動のSRE支援 | Preview (eastus2) |
+| Azure SRE Agent | AI駆動のSRE支援 | Preview (Japan East) |
 
 ### GitHub
 | リソース | 説明 |
@@ -44,6 +44,7 @@
 - Terraform >= 1.5.0
 - Azure CLI (ログイン済み: `az login`)
 - GitHub CLI (ログイン済み: `gh auth login`)
+- Git for Windows（`C:/Program Files/Git/bin/bash.exe` を使用）
 - Azure サブスクリプション
 
 ## 使用方法
@@ -56,29 +57,62 @@ cp terraform.tfvars.example terraform.tfvars
 
 `terraform.tfvars` を編集して必要な値を設定してください。
 
-### 2. 初期化
+### 2. GitHub認証の準備
+
+GitHub CLIのログイン状態を確認し、Gitの認証ヘルパーを設定します。
+
+```bash
+gh auth status
+gh auth setup-git
+```
+
+App ServiceがGitHubリポジトリを使用して継続的デプロイを構成できるように、GitHubトークンをAzure App Serviceへ登録します。`<Azure subscription ID>` には、`terraform.tfvars` の `subscription_id` と同じ値を指定してください。この操作はWeb Appの作成前に実行できます。
+
+```bash
+az webapp deployment source update-token \
+	--git-token "$(gh auth token)" \
+	--subscription "<Azure subscription ID>" \
+	--output none
+```
+
+トークンをファイルへ保存したり、コマンドへ直接記載したりしないでください。
+
+### 3. 初期化
 
 ```bash
 terraform init
 ```
 
-### 3. プラン確認
+### 4. プラン確認
 
 ```bash
 terraform plan -var-file="terraform.tfvars"
 ```
 
-### 4. プロビジョニング
+### 5. プロビジョニング
 
 ```bash
 terraform apply -var-file="terraform.tfvars"
 ```
 
-### 5. 削除
+### 6. 削除
 
 ```bash
-terraform destroy
+terraform destroy -var-file="terraform.tfvars"
 ```
+
+### 7. 環境をクリーンにして再実行する場合
+
+Terraformのstateを保持している場合は、ローカルフォルダーを削除する前に `terraform destroy` を実行してください。
+
+```bash
+terraform plan -destroy -var-file="terraform.tfvars"
+terraform destroy -var-file="terraform.tfvars"
+```
+
+この構成は、`github_repo_name` で指定したプライベートGitHubリポジトリを新規作成します。環境を最初から再構築する場合、同名のリポジトリがGitHubに残っていると作成処理が失敗します。`terraform destroy` の完了後、同名のリポジトリが残っていないことをGitHub上で確認し、残っている場合は必要な内容をバックアップしてから手動で削除してください。
+
+リポジトリとAzureリソースの削除を確認した後、再度「1. 変数ファイルの準備」から実行します。
 
 ## 変数
 
@@ -117,8 +151,8 @@ terraform destroy
 ## 注意事項
 
 1. **Azure SRE Agent** はプレビュー機能です（`Microsoft.App/agents@2025-05-01-preview`）。APIバージョンやスキーマが変更される可能性があります。
-2. SRE Agentは現在限定されたリージョンのみでデプロイ可能です。本リポジトリでは `eastus2` を使用しています。
-3. GitHub認証は `gh auth login` による認証を使用します。
+2. SRE Agentは現在限定されたリージョンのみでデプロイ可能です。本リポジトリでは `japaneast` を使用しています。
+3. GitHub認証には `gh auth login` に加え、App Service用Source Control Tokenの登録が必要です。
 4. 本番環境では、より高いSKUとセキュリティ設定を検討してください。
 5. F1 (Free tier) ではAlways Onが無効のため、一定時間アクセスがないとアプリがアンロードされます。
 
