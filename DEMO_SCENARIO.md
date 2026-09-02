@@ -158,6 +158,115 @@ SRE Agent が Azure Monitor のアラートを自動検出・調査できるよ�
 2. マージ後、GitHub Actions が自動的にデプロイを開始
 3. デプロイ完了後、App Service で修正が反映されていることを確認
 
+## 4. リクエスト監視と Teams 通知の設定
+
+このシナリオでは、SRE Agent にリクエスト状況の確認を依頼し、App Service プランのスケールアップ、Teams コネクタの追加、スケジュールタスクによる定期監視と Teams 通知を設定します。
+
+### 4.1 リクエスト状況の確認と応答時間の調査
+
+1. SRE Agent のスレッドで以下のように指示する:
+
+   ```
+   app-sreagent-dev-xxxxxx の過去24時間のリクエスト状況を教えて
+   ```
+
+2. SRE Agent がリクエスト数、ステータスコード別の内訳、平均応答時間を返すことを確認する
+3. 応答時間に異常がある場合は、以下のように追加指示する:
+
+   ```
+   詳しく調査してください
+   ```
+
+4. SRE Agent が以下の観点で多角的に調査することを確認する:
+   - メトリクスの詳細（5分粒度の応答時間推移）
+   - Application Insights の例外・エラーログ
+   - CPU / メモリなどのリソース使用率
+   - アクティビティログ（デプロイ・設定変更の履歴）
+
+> **ポイント**: F1 Free プランでは CPU クォータ（1日60分）の制限があり、少量のトラフィックでもクォータを使い切ると応答時間が 90 秒（タイムアウト）に固定されます。
+
+### 4.2 App Service プランのスケールアップ
+
+F1 Free プランの CPU クォータ制限を解消するため、B1 Basic プランにスケールアップします。
+
+1. SRE Agent に以下のように指示する:
+
+   ```
+   App Service プランを B1 Basic 以上にスケールアップしてください
+   ```
+
+2. SRE Agent が変更内容（変更前後の SKU、コスト、ロールバック手順）を提示することを確認する
+3. 承認を求められた場合は承認する
+4. スケールアップが完了し、ステータスが「Ready」になることを確認する
+
+> **注意**: B1 Basic プランは月額約 $13.14 のコストが発生します。デモ終了後は F1 Free プランに戻すことを推奨します。
+
+### 4.3 Teams コネクタの追加
+
+SRE Agent から Teams にメッセージを投稿できるようにするため、Teams コネクタを追加します。
+
+1. SRE Agent の左メニューから **Capabilities → Tools** を開く
+2. **Add tool** をクリック
+3. コネクタ一覧から **Microsoft Teams** を選択
+4. Teams アカウントで OAuth 認証を行う
+5. 接続名を設定する（例: `teams`）
+6. **ツールの設定** 画面で、以下のツールを検索して選択する:
+
+   | 検索キーワード | 選択するツール |
+   |---|---|
+   | `Post message` | **Post message in a chat or channel** |
+   | `Post card` | **Post card in a chat or channel** |
+   | `List joined` | **List joined teams** |
+   | `List channels` | **List channels** |
+   | `Get a team` | **Get a team** |
+   | `Get details for` | **Get details for a specific channel in a team** |
+   | `unified` | **Get unified action input metadata** |
+   | `Get message details` | **Get message details** |
+   | `mention` | **Get an @mention token for a user** |
+
+7. 各ツールのアクセス許可を **「許可」** に設定する
+8. **次へ** をクリックし、確認画面で **作成** をクリックする
+
+### 4.4 Teams チームとチャネルの準備
+
+監視結果の投稿先となる Teams チームとチャネルを用意します。
+
+1. **Microsoft Teams** で新しいチームを作成する（例: `PoC-SREAgent`）
+   - チームの種類は「プライベート」でも「パブリック」でもよい
+2. チャネルを確認する（デフォルトの **General** チャネルを使用可能）
+
+> **注意**: 新しく作成したチームが SRE Agent から認識されるまで数分かかる場合があります。
+
+### 4.5 スケジュールタスクの作成（リクエスト監視 + Teams 通知）
+
+SRE Agent に10分ごとのリクエスト監視タスクの作成を依頼します。
+
+1. SRE Agent のスレッドで以下のように指示する:
+
+   ```
+   app-sreagent-dev-xxxxxx のリクエスト状況を10分単位で取得して、Teams に連携させたい
+   ```
+
+2. SRE Agent が Teams コネクタの確認と投稿先のチーム選択を行う
+3. 投稿先のチーム名を指定する（例: `PoC-SREAgent`）
+4. SRE Agent がテスト投稿を実行し、Teams チャネルにメッセージが届くことを確認する
+5. スケジュールタスクが作成されたことを確認する:
+   - タスク名、頻度（10分ごと）、投稿先チャネルが表示される
+6. 10分後に Teams チャネルにリクエスト監視レポートが自動投稿されることを確認する
+
+### 4.6 スケジュールタスクの管理
+
+作成したスケジュールタスクは以下のように管理できます。
+
+- **一時停止**: SRE Agent に「監視タスクを一時停止してください」と指示
+- **再開**: SRE Agent に「監視タスクを再開してください」と指示
+- **キャンセル**: SRE Agent に「監視タスクをキャンセルしてください」と指示
+- **実行履歴**: SRE Agent に「監視タスクの実行履歴を見せてください」と指示
+
+> **注意**: デモ終了後はスケジュールタスクをキャンセルし、不要なコストの発生を防いでください。
+
+---
+
 ## 参考リンク
 
 - [Azure SRE Agent ドキュメント](https://learn.microsoft.com/azure/sre-agent)
@@ -165,3 +274,5 @@ SRE Agent が Azure Monitor のアラートを自動検出・調査できるよ�
 - [ソース管理を接続](https://learn.microsoft.com/ja-jp/azure/sre-agent/code-repository-connect?pivots=github)
 - [インシデント対応計画の作成](https://learn.microsoft.com/ja-jp/azure/sre-agent/incident-response-plan)
 - [カスタムエージェント](https://learn.microsoft.com/ja-jp/azure/sre-agent/custom-agents)
+- [スケジュールタスク](https://learn.microsoft.com/ja-jp/azure/sre-agent/scheduled-tasks)
+- [Teams コネクタ](https://learn.microsoft.com/ja-jp/azure/sre-agent/send-notifications)
