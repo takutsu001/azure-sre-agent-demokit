@@ -42,6 +42,28 @@ resource "azurerm_windows_web_app" "main" {
   tags = var.tags
 }
 
+# Refresh the GitHub token Azure uses to register the Publish Profile secret.
+# Without a valid token, azurerm_app_service_source_control cannot push the
+# publish-profile credential to the GitHub repository, causing GitHub Actions
+# deployments to fail with "Publish profile is invalid".
+resource "null_resource" "update_source_control_token" {
+  triggers = {
+    app_id = azurerm_windows_web_app.main.id
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["C:/Program Files/Git/bin/bash.exe", "-c"]
+    command     = <<-EOT
+      az webapp deployment source update-token \
+        --git-token "$(gh auth token)" \
+        --subscription "${var.subscription_id}" \
+        --output none
+    EOT
+  }
+
+  depends_on = [azurerm_windows_web_app.main]
+}
+
 # GitHub Source Control for continuous deployment
 resource "azurerm_app_service_source_control" "main" {
   app_id                 = azurerm_windows_web_app.main.id
@@ -58,9 +80,11 @@ resource "azurerm_app_service_source_control" "main" {
   }
 
   # Wait for files to be pushed to GitHub before configuring source control
+  # and ensure the GitHub token is refreshed first
   depends_on = [
     github_repository.main,
-    null_resource.push_files
+    null_resource.push_files,
+    null_resource.update_source_control_token
   ]
 }
 
