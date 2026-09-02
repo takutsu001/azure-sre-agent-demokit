@@ -58,7 +58,7 @@ SRE Agent がデモアプリのテレメトリ（ログ、例外、リクエス�
 
 SRE Agent がソースコードを読み取り、Issue の起票や PR の作成を行えるようにします。
 
-1. SRE Agent の左メニューから **Builder → Knowledge Sources** を開く
+1. SRE Agent の左メニューから **Builder → Code access** を開く
 2. **Add repository** をクリック（ガイド付きウィザードが開く）
 3. プラットフォームで **GitHub** を選択
 4. 認証方式を選択する:
@@ -71,7 +71,7 @@ SRE Agent がソースコードを読み取り、Issue の起票や PR の作成
 
 SRE Agent が Azure Monitor のアラートを自動検出・調査できるようにします。
 
-1. SRE Agent の左メニューから **Builder → Incident platform** を開く
+1. SRE Agent の左メニューから **インシデント** を開く
 2. ドロップダウンから **Azure Monitor** を選択
 3. **Save** をクリック
 4. ステータスが「Azure Monitor connected」と表示されることを確認する
