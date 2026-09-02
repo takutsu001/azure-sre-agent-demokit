@@ -47,9 +47,10 @@
 
 SRE Agent がデモアプリのテレメトリ（ログ、例外、リクエスト）を読み取れるようにします。
 
-1. SRE Agent の左メニューから **Builder → Knowledge Sources** を開く
-2. **Logs** セクションで **Connect** をクリック
-3. デモアプリ用の Application Insights リソース（`app-insights-xxxxxx`）を選択して保存する
+1. SRE Agent の左メニューから **Builder → Connectors** を開く
+2. **Add connector** をクリック
+3. コネクタピッカーから **Application Insights** を選択
+4. デモアプリ用の Application Insights リソース（`app-insights-xxxxxx`）を選択して **Add** をクリック
 
 > **注意**: SRE Agent 自身の RG（`rg-sre-agent`）にある Application Insights ではなく、デモアプリの RG（`rg-sre-agent-demoapp`）にある Application Insights を登録してください。
 
@@ -57,22 +58,24 @@ SRE Agent がデモアプリのテレメトリ（ログ、例外、リクエス�
 
 SRE Agent がソースコードを読み取り、Issue の起票や PR の作成を行えるようにします。
 
-1. SRE Agent の左メニューから **Builder → Knowledge Sources** を開く
-2. **Code** セクションで **Connect** をクリック
-3. 認証方式を選択する:
-   - **OAuth**（推奨）: GitHub アカウントでサインイン
+1. SRE Agent の左メニューから **Builder → Code access** を開く
+2. **Add repository** をクリック（ガイド付きウィザードが開く）
+3. プラットフォームで **GitHub** を選択
+4. 認証方式を選択する:
+   - **OAuth**（推奨）: **Sign in to GitHub** をクリックしてサインイン
    - **PAT**: Personal Access Token を入力（`repo` スコープが必要）
-4. デモアプリのリポジトリを選択して接続する
+5. **Next** をクリックし、デモアプリのリポジトリをドロップダウンから選択
+6. **Add repository** をクリックして保存する
 
 ### 2.4 インシデントプラットフォームの接続（Azure Monitor）
 
 SRE Agent が Azure Monitor のアラートを自動検出・調査できるようにします。
 
-1. SRE Agent の左メニューから **Builder → Incident platform** を開く
+1. SRE Agent の左メニューから **インシデント** を開く
 2. ドロップダウンから **Azure Monitor** を選択
-3. **Quickstart response plan** トグルを **オフ** にする（次のステップで独自のプランを作成するため）
-4. **Save** をクリック
-5. ステータスが「Azure Monitor connected」と表示されることを確認する
+3. **Save** をクリック
+4. ステータスが「Azure Monitor connected」と表示されることを確認する
+5. **Quickstart response plan** トグルを **オフ** にする（次のステップで独自のプランを作成するため）
 
 > **注意**: Quickstart response plan をオンのままにすると、デフォルトで Sev3 アラートのみが Autonomous モードで処理されます。独自のプランで制御したい場合はオフにしてください。
 
