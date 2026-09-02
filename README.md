@@ -156,6 +156,62 @@ terraform destroy -var-file="terraform.tfvars"
 4. 本番環境では、より高いSKUとセキュリティ設定を検討してください。
 5. F1 (Free tier) ではAlways Onが無効のため、一定時間アクセスがないとアプリがアンロードされます。
 
+## トラブルシューティング
+
+### GitHub Actions デプロイエラー: "Publish profile is invalid"
+
+GitHub Actionsによるデプロイ時に以下のエラーが発生する場合があります。
+
+```
+Error: Deployment Failed, Error: Publish profile is invalid for app-name and slot-name provided.
+Provide correct publish profile credentials for app.
+```
+
+#### 原因
+
+Terraformプロビジョニング時に、`azurerm_app_service_source_control` がApp ServiceのPublish ProfileをGitHubリポジトリのActionsシークレット（`AZUREAPPSERVICE_PUBLISHPROFILE_...`）へ自動登録しますが、GitHubトークンの権限不足やタイミングの問題により、シークレットが正しく設定されないことがあります。
+
+> **補足:** GitHubのActionsシークレットは、セキュリティ上の理由から一度保存すると値が表示されません。シークレットの編集画面でValueフィールドが空に見えるのはGitHubの仕様であり、値が未設定であることを意味するとは限りません。
+
+#### 修復手順
+
+1. **App ServiceのPublish Profileを取得する**
+
+   Azure CLIで以下のコマンドを実行し、出力されるXMLをコピーします。
+
+   ```bash
+   az webapp deployment list-publishing-profiles \
+     --name <App Service名> \
+     --resource-group <リソースグループ名> \
+     --subscription <サブスクリプションID> \
+     --xml
+   ```
+
+   または、Azure Portalから取得する場合は、対象のApp Serviceの「概要」ページで「発行プロファイルの取得」をクリックしてダウンロードします。
+
+2. **GitHubリポジトリのActionsシークレットを更新する**
+
+   - GitHubリポジトリの **Settings** → **Secrets and variables** → **Actions** を開く
+   - `AZUREAPPSERVICE_PUBLISHPROFILE_...` シークレットの「Update secret」をクリック
+   - 手順1で取得したXML全体をValueに貼り付けて保存する
+
+3. **GitHub Actionsワークフローを再実行する**
+
+   - リポジトリの **Actions** タブを開く
+   - 失敗したワークフローを選択し、「Re-run all jobs」をクリックする
+
+#### 事前確認: SCM基本認証が有効であること
+
+Publish Profileによるデプロイには、App ServiceのSCM基本認証が有効である必要があります。以下のコマンドで確認できます。
+
+```bash
+az rest --method get \
+  --url "/subscriptions/<サブスクリプションID>/resourceGroups/<リソースグループ名>/providers/Microsoft.Web/sites/<App Service名>/basicPublishingCredentialsPolicies?api-version=2024-04-01" \
+  --query "value[?name=='scm'].properties.allow" -o tsv
+```
+
+`true` と表示されれば有効です。`false` の場合は、Azure PortalまたはAzure CLIで有効化してください。
+
 ## ファイル構成
 
 ```
