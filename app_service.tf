@@ -63,3 +63,20 @@ resource "azurerm_app_service_source_control" "main" {
     null_resource.push_files
   ]
 }
+
+# Re-enable SCM basic auth AFTER source control is configured.
+# azurerm_app_service_source_control resets basicPublishingCredentialsPolicies/scm
+# to false as a side-effect, so we must re-apply it afterwards.
+resource "azapi_update_resource" "scm_basic_auth" {
+  type      = "Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-04-01"
+  name      = "scm"
+  parent_id = azurerm_windows_web_app.main.id
+
+  body = {
+    properties = {
+      allow = true
+    }
+  }
+
+  depends_on = [azurerm_app_service_source_control.main]
+}
